@@ -7,10 +7,10 @@ class Tokenizer(ABC):
     Abstract base class for a tokenizer
     """
 
-    def encode(self, text: Union[List[str], str]):
+    def encode(self, text: str):
         raise NotImplementedError
     
-    def decode(self, indices: Union[List[List[int]], List[int]]):
+    def decode(self, tokens: List[int]):
         raise NotImplementedError
 
 

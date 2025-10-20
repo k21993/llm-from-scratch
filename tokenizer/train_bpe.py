@@ -14,13 +14,8 @@ os.makedirs(".tokenizer_info", exist_ok=True)
 
 #data helper
 def load_tiny_stories(path:str) -> str:
-    # getting OOM
-    files  = glob(os.path.join(path,"Tiny*"))
-    text = ""
-    for file in tqdm(files):
-        with open(file, "r") as f:
-            text += f.read()
-    
+    with open(path, "r") as f:
+        text = f.read()
     return text
 
 class BPETrainer:
@@ -101,7 +96,7 @@ class BPETrainer:
             max_pair = BPETrainer._get_max_pair(pairs)
             if not max_pair:
                 break
-            print("max_pair: ", max_pair)
+            # print("max_pair: ", max_pair)
             new_id = len(self.vocab)
             self.vocab[new_id] = self.vocab[max_pair[0]] + self.vocab[max_pair[1]]
             self.merges.append(max_pair)
@@ -122,13 +117,15 @@ class BPETrainer:
 
         with open(os.path.join(SAVE_PATH, "merges.txt"), "w", encoding="utf-8") as f:
             for a, b in merges_str:
-                f.write(f"{a} {b}\n")
+                f.write(f"{a}#&#{b}\n")
 
         print(f"✅ Saved tokenizer files to {SAVE_PATH}")
 
 if __name__ == "__main__":
     # text = "banana band banana"
     # text = "the she there hero"
-    text = load_tiny_stories("/Users/karthik/Desktop/Karthik/projects/cs336/assignment1-basics/data/")
+    valid_text = load_tiny_stories("../data/TinyStoriesV2-GPT4-valid.txt")
+    train_text = load_tiny_stories("../data/TinyStoriesV2-GPT4-train.txt")[:10_000_000] #10MB only
+    text = train_text + valid_text
     bpe = BPETrainer(num_merges=7000, text=text)
     bpe.train()
