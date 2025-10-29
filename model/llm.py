@@ -24,7 +24,7 @@ class RoPE(nn.Module):
         b,h,s,d = x.shape
         x = x.float().view(b, h, s, self.d_half, 2) #( b, h, s, d/2, 2)
         x = torch.view_as_complex(x) #(b, h, s, d/2)
-        x = torch.einsum('bhsd,sd->bhsd', x, self.thetas) #TODO: if s < self.seq_len?
+        x = torch.einsum('bhsd,sd->bhsd', x, self.thetas[:s]) #TODO: if s < self.seq_len?
         x = torch.view_as_real(x).reshape(b, h, s, d) #(b, h, s, d/2, 2) -> (b, h, s, d)
 
         return x #(b, h, s, d)
@@ -109,7 +109,7 @@ class TransformerBlock(nn.Module):
 
         self.num_heads = num_heads
 
-        self.token_emb = nn.Embedding(vocab_size, d_model)
+        # self.token_emb = nn.Embedding(vocab_size, d_model)
         self.mha = MultiHeadAttention(d_model=d_model, num_heads=num_heads, seq_len=seq_len)
 
         self.ffn = nn.Sequential(

@@ -46,6 +46,10 @@ class Adam:
                 # p_new = p - lr*(m_hat/sqrt(v_hat))
                 p.addcdiv_(m_hat, v_hat.sqrt().add_(1e-8), value=-self.lr)
 
+    def zero_grad(self):
+        for p in self.params:
+            p.grad = None #better to set to None than to zero the gradients out as it frees up memory!
+
 if __name__ == "__main__":
     # simple test
     x = torch.tensor([5.0], requires_grad=True)
