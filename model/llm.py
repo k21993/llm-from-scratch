@@ -99,6 +99,39 @@ class LayerNorm(nn.Module):
 
         return x
 
+class RMSNorm(nn.Module):
+    """
+    RMSNorm normalizes using root mean square instead of mean and variance.
+    RMS = sqrt(mean(x^2))
+    x = x / RMS * gamma
+    """
+    def __init__(self, d_model:int, eps:float=1e-6):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(d_model))
+        self.eps = eps
+    
+    def forward(self, x):
+        # x.shape (b, s, d)
+        rms = torch.sqrt(torch.mean(x**2, dim=-1, keepdim=True) + self.eps)
+        x = x / rms
+        x = self.weight * x
+        return x
+
+class SwiGLU(nn.Module):
+    """
+    SwiGLU activation for FFN: SwiGLU(x) = (W1*x * silu(W3*x)) @ W2
+    where silu(x) = x * sigmoid(x)
+    """
+    def __init__(self, d_model:int, d_ff:int):
+        super().__init__()
+        self.w1 = nn.Linear(d_model, d_ff, bias=False)
+        self.w2 = nn.Linear(d_ff, d_model, bias=False)
+        self.w3 = nn.Linear(d_model, d_ff, bias=False)
+    
+    def forward(self, x):
+        # x.shape (b, s, d_model)
+        return self.w2(self.w1(x) * torch.nn.functional.silu(self.w3(x)))
+
 class TransformerBlock(nn.Module):
     """
     The class which defines the Transformer block (mha with rope, ffn, and ln).

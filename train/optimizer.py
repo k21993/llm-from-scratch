@@ -13,10 +13,11 @@ class Adam:
     gradient update:
     theta_t = theta_t-1 - lr* (m_t/(sqrt(v_t) + eps))
     """
-    def __init__(self, params, lr:float, beta1:float=0.9, beta2:float=0.999):
+    def __init__(self, params, lr:float, beta1:float=0.9, beta2:float=0.999, eps:float=1e-8):
         self.lr = lr
         self.beta1 = beta1
         self.beta2 = beta2
+        self.eps = eps
         self.params = list(params)
 
         self.state = {} #state has m, v buffers per param
@@ -44,11 +45,57 @@ class Adam:
 
             with torch.no_grad():
                 # p_new = p - lr*(m_hat/sqrt(v_hat))
-                p.addcdiv_(m_hat, v_hat.sqrt().add_(1e-8), value=-self.lr)
+                p.addcdiv_(m_hat, v_hat.sqrt().add_(self.eps), value=-self.lr)
 
     def zero_grad(self):
         for p in self.params:
             p.grad = None #better to set to None than to zero the gradients out as it frees up memory!
+
+class AdamW:
+    """
+    Implements AdamW optimizer (Adam with decoupled weight decay).
+    Weight decay is applied directly to the weights, not through the gradient.
+    
+    theta_t = theta_t-1 - lr*weight_decay*theta_t-1 - lr*(m_t/(sqrt(v_t) + eps))
+    """
+    def __init__(self, params, lr:float, betas:tuple=(0.9, 0.999), eps:float=1e-8, weight_decay:float=0.0):
+        self.lr = lr
+        self.beta1, self.beta2 = betas
+        self.eps = eps
+        self.weight_decay = weight_decay
+        self.params = list(params)
+        
+        self.state = {}
+        self.t = 0
+    
+    def step(self):
+        self.t += 1
+        
+        for p in self.params:
+            if p.grad is None:
+                continue
+            
+            grad = p.grad
+            cur_state = self.state.setdefault(p, {})
+            m = cur_state.setdefault('m', torch.zeros_like(p))
+            v = cur_state.setdefault('v', torch.zeros_like(p))
+            
+            m.mul_(self.beta1).add_(grad, alpha=1-self.beta1)
+            v.mul_(self.beta2).add_(grad**2, alpha=1-self.beta2)
+            
+            m_hat = m/(1-self.beta1**self.t)
+            v_hat = v/(1-self.beta2**self.t)
+            
+            with torch.no_grad():
+                # apply weight decay first (decoupled)
+                if self.weight_decay > 0:
+                    p.mul_(1 - self.lr * self.weight_decay)
+                # then apply adam update
+                p.addcdiv_(m_hat, v_hat.sqrt().add_(self.eps), value=-self.lr)
+    
+    def zero_grad(self):
+        for p in self.params:
+            p.grad = None
 
 if __name__ == "__main__":
     # simple test
