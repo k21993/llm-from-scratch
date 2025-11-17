@@ -67,9 +67,21 @@ class AdamW:
         
         self.state = {}
         self.t = 0
+        
+        # Add param_groups for compatibility with PyTorch optimizer API
+        self.param_groups = [{
+            'params': self.params,
+            'lr': self.lr,
+            'betas': betas,
+            'eps': self.eps,
+            'weight_decay': self.weight_decay
+        }]
     
     def step(self):
         self.t += 1
+        
+        # Update lr from param_groups if it was changed
+        self.lr = self.param_groups[0]['lr']
         
         for p in self.params:
             if p.grad is None:
@@ -96,6 +108,29 @@ class AdamW:
     def zero_grad(self):
         for p in self.params:
             p.grad = None
+    
+    def state_dict(self):
+        return {
+            'state': self.state,
+            't': self.t,
+            'param_groups': [{
+                'lr': self.lr,
+                'betas': (self.beta1, self.beta2),
+                'eps': self.eps,
+                'weight_decay': self.weight_decay
+            }]
+        }
+    
+    def load_state_dict(self, state_dict):
+        self.state = state_dict['state']
+        self.t = state_dict['t']
+        if 'param_groups' in state_dict and len(state_dict['param_groups']) > 0:
+            pg = state_dict['param_groups'][0]
+            self.lr = pg.get('lr', self.lr)
+            betas = pg.get('betas', (self.beta1, self.beta2))
+            self.beta1, self.beta2 = betas
+            self.eps = pg.get('eps', self.eps)
+            self.weight_decay = pg.get('weight_decay', self.weight_decay)
 
 if __name__ == "__main__":
     # simple test

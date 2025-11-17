@@ -51,7 +51,7 @@ def get_batch(dataset: np.ndarray, batch_size: int, context_length: int, device:
     Sample a batch of sequences from the dataset.
     Returns input sequences and their corresponding labels (shifted by 1).
     """
-    max_start_idx = len(dataset) - context_length - 1
+    max_start_idx = len(dataset) - context_length
     start_indices = np.random.randint(0, max_start_idx, size=batch_size)
     
     x = torch.stack([torch.from_numpy(dataset[i:i+context_length].astype(np.int64)) for i in start_indices])
@@ -76,22 +76,18 @@ def save_checkpoint(model: torch.nn.Module, optimizer, iteration: int, path: str
     """
     checkpoint = {
         'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state if hasattr(optimizer, 'state') else optimizer.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
         'iteration': iteration
     }
     torch.save(checkpoint, path)
 
-def load_checkpoint(model: torch.nn.Module, optimizer, path: str) -> int:
+def load_checkpoint(path: str, model: torch.nn.Module, optimizer) -> int:
     """
     Load model, optimizer state from a checkpoint file.
     Returns the iteration number.
     """
     checkpoint = torch.load(path, map_location='cpu')
     model.load_state_dict(checkpoint['model_state_dict'])
-    
-    if hasattr(optimizer, 'state'):
-        optimizer.state = checkpoint['optimizer_state_dict']
-    else:
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     
     return checkpoint['iteration']

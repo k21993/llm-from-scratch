@@ -265,8 +265,8 @@ def run_rope(
     device = in_query_or_key.device
     d_half = d_k // 2
     
-    # Compute frequencies
-    freqs = 1.0 / (theta ** (torch.arange(0, d_half, 2, device=device).float() / d_k))
+    # Compute frequencies: theta^(-2i/d_k) for i in [0, d_k/2)
+    freqs = 1.0 / (theta ** (torch.arange(0, d_k, 2, device=device).float() / d_k))
     
     # Get positions and compute angles
     pos = token_positions.unsqueeze(-1).float()

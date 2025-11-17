@@ -15,7 +15,7 @@ class RoPE(nn.Module):
         self.d = head_dim
         self.d_half = head_dim // 2
         pos = torch.arange(0,seq_len) #(s,)
-        freqs = 1/torch.pow(10000, torch.arange(0,self.d_half,2)/self.d) # 10000 ^ (-2*i/d) (d/2,)
+        freqs = 1/torch.pow(10000, torch.arange(0,self.d,2)/self.d) # 10000 ^ (-2*i/d) (d/2,)
         thetas = torch.einsum('s,d->sd',pos, freqs)
         thetas = torch.polar(torch.ones_like(thetas), thetas) # convert to polar with mag 1 and angle theta = e^it
         self.register_buffer("thetas", thetas) # (s, d/2)
