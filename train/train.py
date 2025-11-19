@@ -3,7 +3,7 @@ import torch #type: ignore
 from torch.utils.data import DataLoader
 from dataset.tiny_stories import TinyStories
 from model.llm import TransformerLM
-from train.optimizer import Adam
+from train.optimizer import Adam, AdamW
 from train.loss import CrossEntropyLoss
 from train.utils import get_trainable_params
 from train.config import Config
@@ -17,17 +17,17 @@ def train(config):
     #1. define dataloaders
     train_dataset = TinyStories(
         np_file_path=config.tiny_stories_tokenized_path,
-        split="val",
+        split="train",
         seq_len=config.seq_len,
         pad_token_id=config.pad_token_id
         )
     
-    # val_dataset = TinyStories(
-    #     np_file_path=config.tiny_stories_tokenized_path,
-    #     split="val",
-    #     seq_len=config.seq_len,
-    #     pad_token_id=config.pad_token_id
-    #     )
+    val_dataset = TinyStories(
+        np_file_path=config.tiny_stories_tokenized_path,
+        split="val",
+        seq_len=config.seq_len,
+        pad_token_id=config.pad_token_id
+        )
     
     train_dataloader = DataLoader(
         train_dataset,
@@ -37,12 +37,12 @@ def train(config):
         shuffle=True
         )
     
-    # val_dataloader = DataLoader(
-    #     val_dataset,
-    #     batch_size=config.batch_size,
-    #     pin_memory=(config.device == "cuda"),
-    #     num_workers=config.num_workers,
-    #     )
+    val_dataloader = DataLoader(
+        val_dataset,
+        batch_size=config.batch_size,
+        pin_memory=(config.device == "cuda"),
+        num_workers=config.num_workers,
+        )
     
     #2. load model
     model = TransformerLM(
@@ -58,11 +58,12 @@ def train(config):
     #4. init optim
     trainable_params, num_trainable_params = get_trainable_params(model)
     logger.info(f"num trainable params: {num_trainable_params}")
-    optim = Adam(
+    optim = AdamW(
         params=trainable_params,
         lr=config.lr,
-        beta1=config.beta1,
-        beta2=config.beta2
+        betas=(config.beta1, config.beta2),
+        eps=1e-8,
+        weight_decay=config.weight_decay
     )
 
     #5. init loss

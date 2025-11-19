@@ -6,7 +6,7 @@ class Config:
     # -----------------------------
     # These should point to where your np.memmap tokenized files are stored.
     # e.g. tiny_stories_tokenized_path_train/train.dat and val.dat exist
-    tiny_stories_tokenized_path = "data/tokenized_dataset/tiny_stories/"
+    tiny_stories_tokenized_path = "/mnt/localssd/llm_from_scratch/tiny_stories/"
 
     # -----------------------------
     # Model hyperparameters
@@ -20,14 +20,14 @@ class Config:
     # -----------------------------
     # Training hyperparameters
     # -----------------------------
-    batch_size = 1
-    num_epochs = 3            # just enough to see loss drop
+    batch_size = 256
+    num_epochs = 3              # just enough to see loss drop
     lr = 3e-4
     beta1 = 0.9
     beta2 = 0.999
     pad_token_id = 0
     num_workers = 0           # for DataLoader
-
+    weight_decay = 0.01
     # -----------------------------
     # Device setup
     # -----------------------------
